@@ -6,4 +6,5 @@ BIN=./grovyle
 all:
 	-@mkdir obj
 	$(CC) $(FLAGS) -c src/main.c -o obj/main.o
-	$(CC) obj/main.o -o $(BIN) $(LIBS)
+	$(CC) $(FLAGS) -c src/file.c -o obj/file.o
+	$(CC) obj/main.o obj/file.o -o $(BIN) $(LIBS)

@@ -4,35 +4,133 @@
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <getopt.h>
+#include "file.h"
 
 struct Instruction
 {
-	unsigned int number, arg[3];
+	unsigned number, arg[3];
 	char op;
 };
+
 struct Program
 {
 	struct Instruction* instructions;
 	size_t instructioncount;
+	size_t codesize;
 	char* code;
 };
+
+/* Options */
+static int verboseoutput = 0;
 
 #define REGISTER_AMOUNT (1u << 8)
 static uint64_t registers[REGISTER_AMOUNT];
 static struct Program program;
 
+static void
+usage(char* program)
+{
+	printf("Usage: %s [OPTIONS] FILE INITIAL_STATE\n", program);
+	puts("Options:");
+	puts("-v\t Verbose output messages.");
+	puts("-h\t Help messages.");
+	puts("INITIAL_STATE is one string argument in format \"R1=8 R42=9 (...) Rn=x\".\n\
+This sets up the initial state of the machine(registers).");
+}
+
+static int
+prepareprogram(const char* filepath)
+{
+	size_t i;
+	if (fileread(filepath, &program.code, &program.codesize))
+	{
+		return 1;
+	}
+	program.instructioncount = 0;
+	for (i = 0; i < program.codesize; i++)
+	{
+		if (program.code[i] == '\n')
+		{
+			program.instructioncount++;
+		}
+	}
+	return 0;
+}
+
+static int
+preparemachine(const char* args)
+{
+	size_t argoffset = 0;
+	while (args[argoffset] != '\0')
+	{
+		uint64_t value;
+		size_t registernumber;
+		if (sscanf(args+argoffset, " R%ld=%ld", &registernumber, &value) != 2)
+		{
+			fprintf(stderr, "Malformed argument for machine's initial state!\n");
+			return 1;
+		}
+		registers[registernumber-1] = value;
+		if (verboseoutput)
+		{
+			printf("LET R[%ld]=%ld\n", registernumber, value);
+		}
+		/* Move to the next argument (if it exists) */
+		while (args[argoffset] != ' ' && args[argoffset] != '\t' && args[argoffset] != '\n' && args[argoffset] != '\0')
+		{
+			argoffset++;
+		}
+		if (args[argoffset] != '\0')
+		{
+			argoffset++;
+		}
+	}
+	return 0;
+}
+
+static int
+parseargs(int argc, char** argv)
+{
+	int opt;
+	while ((opt = getopt(argc, argv, "vh")) != EOF)
+	{
+		switch(opt)
+		{
+		case 'v':
+			verboseoutput = 1;
+			break;
+		case 'h':
+		default:
+			usage(argv[0]);
+			return 1;
+		}
+	}
+	/* File path argument */
+	if (optind >= argc)
+	{
+		fputs("File path was not given.\n", stderr);
+		return 1;
+	}
+	if (prepareprogram(argv[optind]))
+	{
+		return 1;
+	}
+	/* Initial state argument (additional args) */
+	if (argc > optind+1)
+	{
+		if (preparemachine(argv[optind+1]))
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static int
 readprogram(int verboseoutput)
 {
 	size_t program_codeoffset, readinstructionlines, instructionindex;
-	program.instructioncount = 6;
-	program.code =
-"1. Z(1)\n"
-"2. S(1)\n"
-"3. S(1)\n"
-"4. J(2, 2, 5)\n"
-"5. S(2)\n"
-"6. J(1, 1, 100)\n";
 	program.instructions = malloc(program.instructioncount*sizeof(struct Instruction));
 
 	program_codeoffset = readinstructionlines = instructionindex = 0;
@@ -167,10 +265,13 @@ executeprogram(void)
 int
 main(int argc, char** argv)
 {
-	int verboseoutput = 1;
-	if (readprogram(verboseoutput))
+	if (parseargs(argc, argv))
 	{
 		return 1;
+	}
+	if (readprogram(verboseoutput))
+	{
+		return 2;
 	}
 	executeprogram();
 	return 0;
