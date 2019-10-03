@@ -23,6 +23,7 @@ struct Program
 
 /* Options */
 static int verboseoutput = 0;
+static int printonlyfinalvalue = 0;
 
 #define REGISTER_AMOUNT (1u << 8)
 static uint64_t registers[REGISTER_AMOUNT];
@@ -34,6 +35,7 @@ usage(char* program)
 	printf("Usage: %s [OPTIONS] FILE INITIAL_STATE\n", program);
 	puts("Options:");
 	puts("-v\t Verbose output messages.");
+	puts("-r\t Only output the final value of register 1 to stdout.");
 	puts("-h\t Help messages.");
 	puts("INITIAL_STATE is one string argument in format \"R1=8 R42=9 (...) Rn=x\".\n\
 This sets up the initial state of the machine(registers).");
@@ -93,12 +95,16 @@ static int
 parseargs(int argc, char** argv)
 {
 	int opt;
-	while ((opt = getopt(argc, argv, "vh")) != EOF)
+	while ((opt = getopt(argc, argv, "vrh")) != EOF)
 	{
 		switch(opt)
 		{
 		case 'v':
 			verboseoutput = 1;
+			break;
+		case 'r':
+			verboseoutput = 0; /* if -r precedes -v, this will do nothing. */
+			printonlyfinalvalue = 1;
 			break;
 		case 'h':
 		default:
@@ -258,7 +264,14 @@ executeprogram(void)
 				break;
 		}
 	}
-	printf("Register [1] = %"PRId64"\n", registers[0]);
+	if (printonlyfinalvalue)
+	{
+		printf("%"PRId64"\n", registers[0]);
+	}
+	else
+	{
+		printf("Register [1] = %"PRId64"\n", registers[0]);
+	}
 	return registers[0];
 }
 
