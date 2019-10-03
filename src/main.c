@@ -68,7 +68,7 @@ preparemachine(const char* args)
 	{
 		uint64_t value;
 		size_t registernumber;
-		if (sscanf(args+argoffset, " R%ld=%ld", &registernumber, &value) != 2)
+		if (sscanf(args+argoffset, " R%ld=%"PRId64"", &registernumber, &value) != 2)
 		{
 			fprintf(stderr, "Malformed argument for machine's initial state!\n");
 			return 1;
@@ -76,7 +76,7 @@ preparemachine(const char* args)
 		registers[registernumber-1] = value;
 		if (verboseoutput)
 		{
-			printf("LET R[%ld]=%ld\n", registernumber, value);
+			printf("LET R[%ld]=%"PRId64"\n", registernumber, value);
 		}
 		/* Move to the next argument (if it exists) */
 		while (args[argoffset] != ' ' && args[argoffset] != '\t' && args[argoffset] != '\n' && args[argoffset] != '\0')
@@ -165,22 +165,22 @@ readprogram(int verboseoutput)
 			&(program.instructions[instructionindex].arg[2]));
 		if (parsedamount == 2 && program.instructions[instructionindex].op == 'Z')
 		{
-			printf("Line number %ld: operator 'Z' requires one argument.\n", readinstructionlines);
+			fprintf(stderr, "Line number %ld: operator 'Z' requires one argument.\n", readinstructionlines);
 			return 1;
 		}
 		else if (parsedamount == 2 && program.instructions[instructionindex].op == 'S')
 		{
-			printf("Line number %ld: operator 'S' requires one argument.\n", readinstructionlines);
+			fprintf(stderr, "Line number %ld: operator 'S' requires one argument.\n", readinstructionlines);
 			return 2;
 		}
 		else if (parsedamount < 4 && program.instructions[instructionindex].op == 'T')
 		{
-			printf("Line number %ld: operator 'T' requires two arguments.\n", readinstructionlines);
+			fprintf(stderr, "Line number %ld: operator 'T' requires two arguments.\n", readinstructionlines);
 			return 3;
 		}
 		else if (parsedamount < 5 && program.instructions[instructionindex].op == 'J')
 		{
-			printf("Line number %ld: operator 'J' requires three arguments.\n", readinstructionlines);
+			fprintf(stderr, "Line number %ld: operator 'J' requires three arguments.\n", readinstructionlines);
 			return 3;
 		}
 		if (verboseoutput)
