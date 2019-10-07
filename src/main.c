@@ -147,11 +147,14 @@ readprogram(int verboseoutput)
 		int parsedamount;
 		char* instructioncode;
 
+		/*
+		 * Let `instructioncode` be the next read instruction.
+		 * Assuming every instruction has its own separate line.
+		 */
 		while (program.code[program_codeoffset] != '\n')
 		{
 			program_codeoffset++;
 		}
-
 		instructionstringlength = program_codeoffset-instructionstart;
 		instructioncode         = malloc((instructionstringlength+1)*sizeof(char));
 		memcpy(instructioncode, program.code+instructionstart, instructionstringlength);
@@ -208,6 +211,10 @@ readprogram(int verboseoutput)
 	return 0;
 }
 
+/*
+ * Return the instruction with the given number.
+ * If no such instruction exists, return an instruction with `op` of 'H'.
+ */
 static struct Instruction
 findinstruction(size_t number)
 {
