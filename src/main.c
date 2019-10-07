@@ -121,6 +121,7 @@ parseargs(int argc, char** argv)
 	if (optind >= argc)
 	{
 		fputs("File path was not given.\n", stderr);
+		usage(argv[0]);
 		return 1;
 	}
 	if (prepareprogram(argv[optind]))
