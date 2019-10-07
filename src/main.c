@@ -7,6 +7,11 @@
 #include <getopt.h>
 #include "file.h"
 
+#define INSTRUCTION_OP_ZERO 'Z'
+#define INSTRUCTION_OP_SUCCESSOR 'S'
+#define INSTRUCTION_OP_JUMP 'J'
+#define INSTRUCTION_OP_TRANSFER 'T'
+#define INSTRUCTION_OP_HALT 'H' /* Only returned by findinstruction. */
 struct Instruction
 {
 	unsigned number, arg[3];
@@ -166,24 +171,24 @@ readprogram(int verboseoutput)
 			&(program.instructions[instructionindex].arg[0]),
 			&(program.instructions[instructionindex].arg[1]),
 			&(program.instructions[instructionindex].arg[2]));
-		if (parsedamount == 2 && program.instructions[instructionindex].op == 'Z')
+		if (parsedamount == 2 && program.instructions[instructionindex].op == INSTRUCTION_OP_ZERO)
 		{
-			fprintf(stderr, "Line number %ld: operator 'Z' requires one argument.\n", readinstructionlines);
+			fprintf(stderr, "Line number %ld: operator '%c' requires one argument.\n", readinstructionlines, INSTRUCTION_OP_ZERO);
 			return 1;
 		}
-		else if (parsedamount == 2 && program.instructions[instructionindex].op == 'S')
+		else if (parsedamount == 2 && program.instructions[instructionindex].op == INSTRUCTION_OP_SUCCESSOR)
 		{
-			fprintf(stderr, "Line number %ld: operator 'S' requires one argument.\n", readinstructionlines);
+			fprintf(stderr, "Line number %ld: operator '%c' requires one argument.\n", readinstructionlines, INSTRUCTION_OP_SUCCESSOR);
 			return 2;
 		}
-		else if (parsedamount < 4 && program.instructions[instructionindex].op == 'T')
+		else if (parsedamount < 4 && program.instructions[instructionindex].op == INSTRUCTION_OP_TRANSFER)
 		{
-			fprintf(stderr, "Line number %ld: operator 'T' requires two arguments.\n", readinstructionlines);
+			fprintf(stderr, "Line number %ld: operator '%c' requires two arguments.\n", readinstructionlines, INSTRUCTION_OP_TRANSFER);
 			return 3;
 		}
-		else if (parsedamount < 5 && program.instructions[instructionindex].op == 'J')
+		else if (parsedamount < 5 && program.instructions[instructionindex].op == INSTRUCTION_OP_JUMP)
 		{
-			fprintf(stderr, "Line number %ld: operator 'J' requires three arguments.\n", readinstructionlines);
+			fprintf(stderr, "Line number %ld: operator '%c' requires three arguments.\n", readinstructionlines, INSTRUCTION_OP_JUMP);
 			return 3;
 		}
 		if (verboseoutput)
@@ -228,7 +233,7 @@ findinstruction(size_t number)
 			return ins;
 		}
 	}
-	halt_ins.op = 'H';
+	halt_ins.op = INSTRUCTION_OP_HALT;
 	return halt_ins;
 }
 
@@ -244,7 +249,7 @@ executeprogram(void)
 		struct Instruction ins = findinstruction(ip);
 		switch(ins.op)
 		{
-			case 'J':
+			case INSTRUCTION_OP_JUMP:
 				if (registers[ins.arg[0]-1] == registers[ins.arg[1]-1])
 				{
 					ip = ins.arg[2];
@@ -254,19 +259,19 @@ executeprogram(void)
 					ip++;
 				}
 				break;
-			case 'S':
+			case INSTRUCTION_OP_SUCCESSOR:
 				registers[ins.arg[0]-1]++;
 				ip++;
 				break;
-			case 'Z':
+			case INSTRUCTION_OP_ZERO:
 				registers[ins.arg[0]-1] = 0;
 				ip++;
 				break;
-			case 'T':
+			case INSTRUCTION_OP_TRANSFER:
 				registers[ins.arg[1]-1] = registers[ins.arg[0]-1];
 				ip++;
 				break;
-			case 'H':
+			case INSTRUCTION_OP_HALT:
 				running = 0;
 				break;
 		}
