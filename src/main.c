@@ -243,6 +243,11 @@ readprogram(int verboseoutput)
 			fprintf(stderr, "Line number %ld: operator '%c' requires three arguments.\n", readinstructionlines, INSTRUCTION_OP_JUMP);
 			return 3;
 		}
+		else if (parsedamount <= 0)
+		{
+			fprintf(stderr, "Line number %ld: erroneous format.\n", readinstructionlines);
+			return 4;
+		}
 		switch (program.instructions[instructionindex].op)
 		{
 			default:
