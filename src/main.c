@@ -27,6 +27,7 @@ struct Program
 };
 
 /* Options */
+static unsigned int outputregisterindex = 0;
 static int verboseoutput = 0;
 static int printonlyfinalvalue = 0;
 static int manualstep = 0;
@@ -44,6 +45,7 @@ usage(char* program)
 	puts("-v\t Verbose output messages.");
 	puts("-r\t Only output the final value of register 1 to stdout.");
 	puts("-s\t Manually call instructions one by one.");
+	puts("-o n\t Set the simulation's output register index to n. (default 1)");
 	puts("-h\t Help messages.");
 	puts("INITIAL_STATE is one string argument in format \"R1=8 R42=9 (...) Rn=x\".\n\
 This sets up the initial state of the machine(registers).");
@@ -111,7 +113,7 @@ static int
 parseargs(int argc, char** argv)
 {
 	int opt;
-	while ((opt = getopt(argc, argv, "vrhs")) != EOF)
+	while ((opt = getopt(argc, argv, "vrhso:")) != EOF)
 	{
 		switch(opt)
 		{
@@ -124,6 +126,15 @@ parseargs(int argc, char** argv)
 			break;
 		case 's':
 			manualstep = 1;
+			break;
+		case 'o':
+			if (sscanf(optarg, " %u", &outputregisterindex) != 1)
+			{
+				fprintf(stderr, "Erroneous output index. Given: \"%s\".\n", optarg);
+				usage(argv[0]);
+				return 1;
+			}
+			outputregisterindex--;
 			break;
 		case 'h':
 		default:
@@ -265,7 +276,7 @@ readprogram(int verboseoutput)
 	}
 	if (verboseoutput)
 	{
-		printf("Read program has %lu instructions.\n", program.instructioncount);
+		printf("Read program has %lu instructions. Output is looked at register R%d.\n", program.instructioncount, outputregisterindex+1);
 	}
 	return 0;
 }
@@ -385,13 +396,13 @@ executeprogram(void)
 	}
 	if (printonlyfinalvalue)
 	{
-		printf("%"PRId64"\n", registers[0]);
+		printf("%"PRId64"\n", registers[outputregisterindex]);
 	}
 	else
 	{
-		printf("Register [1] = %"PRId64"\n", registers[0]);
+		printf("Register [%u] = %"PRId64"\n", outputregisterindex+1, registers[outputregisterindex]);
 	}
-	return registers[0];
+	return registers[outputregisterindex];
 }
 
 int
