@@ -206,7 +206,7 @@ readprogram(int verboseoutput)
 		memcpy(instructioncode, program.code+instructionstart, instructionstringlength);
 		instructioncode[instructionstringlength] = '\0';
 
-		parsedamount = sscanf(instructioncode, "%d. %c(%d, %d, %d)",
+		parsedamount = sscanf(instructioncode, "%d. %c ( %d , %d , %d )",
 			&program.instructions[instructionindex].number,
 			&program.instructions[instructionindex].op,
 			&(program.instructions[instructionindex].arg[0]),
