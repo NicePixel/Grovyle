@@ -29,9 +29,11 @@ struct Program
 /* Options */
 static int verboseoutput = 0;
 static int printonlyfinalvalue = 0;
+static int manualstep = 0;
 
 #define REGISTER_AMOUNT (1u << 8)
 static uint64_t registers[REGISTER_AMOUNT];
+static unsigned int relevantregisters[REGISTER_AMOUNT], relevantregisterscount;
 static struct Program program;
 
 static void
@@ -41,9 +43,18 @@ usage(char* program)
 	puts("Options:");
 	puts("-v\t Verbose output messages.");
 	puts("-r\t Only output the final value of register 1 to stdout.");
+	puts("-s\t Manually call instructions one by one.");
 	puts("-h\t Help messages.");
 	puts("INITIAL_STATE is one string argument in format \"R1=8 R42=9 (...) Rn=x\".\n\
 This sets up the initial state of the machine(registers).");
+}
+
+static void
+usage_manualstep(char* command)
+{
+	printf("\"%s\" is not a valid command. Valid commands include:\n", command);
+	puts("q \t Immediately exit the program.");
+	puts("s \t One step. Execute the next instruction.");
 }
 
 static int
@@ -100,7 +111,7 @@ static int
 parseargs(int argc, char** argv)
 {
 	int opt;
-	while ((opt = getopt(argc, argv, "vrh")) != EOF)
+	while ((opt = getopt(argc, argv, "vrhs")) != EOF)
 	{
 		switch(opt)
 		{
@@ -110,6 +121,9 @@ parseargs(int argc, char** argv)
 		case 'r':
 			verboseoutput = 0; /* if -r precedes -v, this will do nothing. */
 			printonlyfinalvalue = 1;
+			break;
+		case 's':
+			manualstep = 1;
 			break;
 		case 'h':
 		default:
@@ -139,12 +153,38 @@ parseargs(int argc, char** argv)
 	return 0;
 }
 
+static void
+addrelevantregister(unsigned int registerindex)
+{
+	unsigned int i;
+	for (i = 0; i < relevantregisterscount; i++)
+	{
+		if (relevantregisters[i] == registerindex)
+		{
+			return;
+		}
+	}
+	relevantregisters[i] = registerindex;
+	relevantregisterscount++;
+}
+
+static void
+printrelevantregisters(void)
+{
+	unsigned int i;
+	for (i = 0; i < relevantregisterscount; i++)
+	{
+		printf("R%u = %lu\n", i, registers[relevantregisters[i]]);
+	}
+}
+
 static int
 readprogram(int verboseoutput)
 {
 	size_t program_codeoffset, readinstructionlines, instructionindex;
 	program.instructions = malloc(program.instructioncount*sizeof(struct Instruction));
 
+	relevantregisterscount = 0;
 	program_codeoffset = readinstructionlines = instructionindex = 0;
 	for (;;)
 	{
@@ -192,9 +232,22 @@ readprogram(int verboseoutput)
 			fprintf(stderr, "Line number %ld: operator '%c' requires three arguments.\n", readinstructionlines, INSTRUCTION_OP_JUMP);
 			return 3;
 		}
+		switch (program.instructions[instructionindex].op)
+		{
+			default:
+			case INSTRUCTION_OP_JUMP:
+			case INSTRUCTION_OP_TRANSFER:
+				addrelevantregister(program.instructions[instructionindex].arg[1]-1);
+			case INSTRUCTION_OP_SUCCESSOR:
+			case INSTRUCTION_OP_ZERO:
+				addrelevantregister(program.instructions[instructionindex].arg[0]-1);
+				break;
+			case INSTRUCTION_OP_HALT:
+				puts("[Exited the previous instruction.])");
+		}
 		if (verboseoutput)
 		{
-			printf("-> %d. Operator %c. Parameters: %d %d %d;\n",
+			printf("-> %4d. Operator %c. Parameters: %d %d %d;\n",
 				program.instructions[instructionindex].number,
 				program.instructions[instructionindex].op,
 				program.instructions[instructionindex].arg[0],
@@ -248,6 +301,55 @@ executeprogram(void)
 	while (running)
 	{
 		struct Instruction ins = findinstruction(ip);
+		if (manualstep)
+		{
+			char in[256];
+			int loopinput;
+			printf("-> %c(", ins.op);
+			switch (ins.op)
+			{
+				default:
+				case INSTRUCTION_OP_JUMP:      printf("%d, %d, %d)\n", ins.arg[0], ins.arg[1], ins.arg[2]); break;
+				case INSTRUCTION_OP_TRANSFER:  printf("%d, %d)\n",     ins.arg[0], ins.arg[1]);             break;
+				case INSTRUCTION_OP_SUCCESSOR: printf("%d)\n",         ins.arg[0]);                         break;
+				case INSTRUCTION_OP_ZERO:      printf("%d)\n",         ins.arg[0]);                         break;
+				case INSTRUCTION_OP_HALT:      puts("[Program halted.])");                                  break;
+			}
+			do
+			{
+				int inlength;
+				printf(": ");
+				fgets(in, 256, stdin);
+				inlength = strlen(in);
+				in[inlength-1] = '\0';
+				inlength--;
+				if (inlength == 0)
+				{
+					loopinput = 1;
+					continue;
+				}
+				loopinput = 0;
+				switch(in[0])
+				{
+					case 'q':
+						running = 0;
+						break;
+					default:
+						usage_manualstep(in);
+						loopinput = 1;
+					case 's':
+						break;
+					case 'p':
+						printrelevantregisters();
+						loopinput = 1;
+						break;
+				}
+			} while (loopinput);
+			if (!running)
+			{
+				break;
+			}
+		}
 		switch(ins.op)
 		{
 			case INSTRUCTION_OP_JUMP:
@@ -273,7 +375,11 @@ executeprogram(void)
 				ip++;
 				break;
 			case INSTRUCTION_OP_HALT:
-				running = 0;
+				/* In manual mode, the user has to quit explicitly. */
+				if (!manualstep)
+				{
+					running = 0;
+				}
 				break;
 		}
 	}
