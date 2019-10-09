@@ -56,6 +56,7 @@ usage_manualstep(char* command)
 {
 	printf("\"%s\" is not a valid command. Valid commands include:\n", command);
 	puts("q \t Immediately exit the program.");
+	puts("p \t Print used registers.");
 	puts("s \t One step. Execute the next instruction.");
 	puts("c \t Continue. Start executing the program without manual intervention.");
 }
