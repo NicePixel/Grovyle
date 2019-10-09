@@ -187,7 +187,7 @@ printrelevantregisters(void)
 	unsigned int i;
 	for (i = 0; i < relevantregisterscount; i++)
 	{
-		printf("R%u = %lu\n", i, registers[relevantregisters[i]]);
+		printf("R%u = %lu\n", i+1, registers[relevantregisters[i]]);
 	}
 }
 
