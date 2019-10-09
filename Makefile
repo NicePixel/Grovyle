@@ -1,5 +1,5 @@
 CC=gcc
-FLAGS=-Wall
+FLAGS=-Wall -O3
 LIBS=
 BIN=./grovyle
 
