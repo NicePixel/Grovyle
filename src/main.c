@@ -179,7 +179,7 @@ addrelevantregister(unsigned int registerindex)
 	relevantregisterscount++;
 }
 
-static void
+static inline void
 printrelevantregisters(void)
 {
 	unsigned int i;
