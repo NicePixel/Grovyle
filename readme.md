@@ -19,9 +19,9 @@ The optional parameter `-s` allows the user to manually call the next instructio
 The full list of commands:
 
 * `s` next instruction;
-* `q` quit the program immediately;
 * `c` run the program to the end;
-* `p` print all used registers.
+* `p` print all used registers;
+* `q` quit the program immediately.
 
 ### Initial state
 
