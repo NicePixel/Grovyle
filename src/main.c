@@ -312,10 +312,8 @@ findinstruction(size_t number)
 static int
 executeprogram(void)
 {
-	size_t ip; /* Instruction pointer. */
-	int running;
-	ip = 1;
-	running = 1;
+	/* IP is 'Instruction Pointer'. */
+	size_t running = 1, ip = 1;
 	while (running)
 	{
 		struct Instruction ins = findinstruction(ip);
